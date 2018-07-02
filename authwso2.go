@@ -11,11 +11,9 @@ import (
 
 var (
 	oauthConf = &clientcredentials.Config{
-		ClientID:     "fy2TvqkILON1nfsqL6zaLL6C0m4a",
-		ClientSecret: "9Aon6fkYoEBeGBawwg4fWbqpg6Aa",
-		TokenURL:     "https://localhost:9443/oauth2/token",
-		Scopes:       []string{"openid", "profile", "email", "offline_access"},
-		//EndpointParams: "",
+		ClientID:/*"fy2TvqkILON1nfsqL6zaLL6C0m4a"*/ "HCZAOMKxHCeHfuYwmj7iuRPMbpEa",
+		ClientSecret:/*"9Aon6fkYoEBeGBawwg4fWbqpg6Aa"*/ "WxgaU5jG2dhmjbIQKuy6zHZw44Ya",
+		TokenURL: "https://localhost:9443/oauth2/token",
 	}
 	// random string for oauth2 API calls to protect against CSRF
 	oauthStateString = "thisshouldberandom"
@@ -25,7 +23,7 @@ func getAccessToken() (string, error) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	token, err := oauthConf.Token(oauth2.NoContext)
 	if err != nil {
-		fmt.Println("ERROR IN Token Request")
+		fmt.Println("Error In Token Request")
 		return "", err
 	}
 	return token.AccessToken, nil

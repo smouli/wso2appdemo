@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	minio "github.com/minio/minio-go"
-	"github.com/minio/minio/pkg/auth"
 )
 
 func main() {
@@ -21,8 +20,10 @@ func main() {
 	}
 	fmt.Println("token=", accessToken)
 
+	introspectEndpoint := "https://localhost:9443/oauth2/introspect"
+
 	//Exchange Access Token from IDP for Minio Credentials
-	cred, err := getMinioCred(accessToken) //minioCred.go
+	cred, err := getMinioCred(accessToken, introspectEndpoint) //minioCred.go
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -68,9 +69,15 @@ func main() {
 	log.Printf("Successfully uploaded %s of size %d\n", objectName, n)
 }
 
-func getMinioCred(accessToken string) (*auth.Credentials, error) {
-	minioTokenUrl := "http://localhost:4000"
-	resource := "/getminiotoken"
+type credentials struct {
+	AccessKey string `json:"accessKey,omitempty"`
+	SecretKey string `json:"secretKey,omitempty"`
+	ExpTime   float64
+}
+
+func getMinioCred(accessToken string, endpoint string) ( /*auth.Credentials*/ credentials, error) {
+	minioTokenUrl := "http://localhost:9000/"
+	resource := "/minio/admin/v1/sts"
 	u, err := url.ParseRequestURI(minioTokenUrl)
 	if err != nil {
 		//return nil, err
@@ -80,29 +87,27 @@ func getMinioCred(accessToken string) (*auth.Credentials, error) {
 	urlStr := u.String()
 	data := url.Values{}
 	data.Add("AccessToken", accessToken)
-
+	data.Add("Endpoint", endpoint)
+	fmt.Println("DATA at println side is", endpoint)
 	client := &http.Client{}
 	r, err := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode()))
 	if err != nil {
-		//return nil, err
 		log.Fatalln(err)
 	}
 
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := client.Do(r)
 	if err != nil {
-		//return nil, err
 		log.Fatalln(err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		//return nil, err
 		log.Fatalln(err)
 	}
-
-	cred := &auth.Credentials{}
+	cred := &credentials{}
 	json.Unmarshal(body, cred)
 	defer resp.Body.Close()
-	return cred, nil
+	return *cred, nil
+
 }
